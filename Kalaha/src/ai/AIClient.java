@@ -49,7 +49,6 @@ public class AIClient implements Runnable
         catch (Exception ex)
         {
             addText("Unable to connect to server");
-            return;
         }
     }
     
@@ -92,7 +91,7 @@ public class AIClient implements Runnable
      * 
      * @param txt The text to add
      */
-    public void addText(String txt)
+    public final void addText(String txt)
     {
         //Don't change this
         text.append(txt + "\n");
@@ -212,6 +211,8 @@ public class AIClient implements Runnable
      */
     public int getMove(GameState currentBoard)
     {
+        Tree tree = new Tree();
+        tree.CreateTree(currentBoard.clone(), 5);
         
         int myMove = getRandom();
         return myMove;

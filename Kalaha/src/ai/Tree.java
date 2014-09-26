@@ -1,15 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package ai;
-import ai.Node;
 import kalaha.GameState;
-/**
- *
- * @author BTH
- */
+
+
 public class Tree {
     private Node m_RootNode;
     
@@ -18,8 +11,13 @@ public class Tree {
         m_RootNode = null;
     }
     
-    public void CreateTree(GameState p_CurrentState)
+    public void CreateTree(GameState p_CurrentState, int TreeDepth)
     {
-        
+        m_RootNode = new Node(null, p_CurrentState, 0);
+        m_RootNode.createChildren(TreeDepth);
+    }
+    public int getMove()
+    {
+        return 1;
     }
 }
