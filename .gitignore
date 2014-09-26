@@ -19,8 +19,6 @@ Thumbs.db
 *.cache
 *.ilk
 *.log
-*.jar
-*.properties
 [Bb]in
 [Dd]ebug*/
 *.lib
@@ -29,3 +27,8 @@ obj/
 [Rr]elease*/
 _ReSharper*/
 [Tt]est[Rr]esult*
+#Ignore Java
+*.jar
+*.properties
+[Pp]rivate*/
+
