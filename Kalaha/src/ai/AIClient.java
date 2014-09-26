@@ -211,9 +211,9 @@ public class AIClient implements Runnable
      */
     public int getMove(GameState currentBoard)
     {
-        Tree tree = new Tree();
-        tree.CreateTree(currentBoard.clone(), 5);
-        
+        Tree tree = new Tree(3);
+        tree.CreateTree(currentBoard.clone());
+        tree.getMove();
         int myMove = getRandom();
         return myMove;
     }
