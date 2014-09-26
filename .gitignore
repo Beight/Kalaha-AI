@@ -31,4 +31,5 @@ _ReSharper*/
 *.jar
 *.properties
 [Pp]rivate*/
-
+[Dd]ist*/
+[Bb]uild*/
