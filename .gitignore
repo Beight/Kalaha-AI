@@ -30,6 +30,8 @@ _ReSharper*/
 #Ignore Java
 *.jar
 *.properties
+*.mf
+*.DS_Store
 [Pp]rivate*/
 [Dd]ist*/
 [Bb]uild*/
