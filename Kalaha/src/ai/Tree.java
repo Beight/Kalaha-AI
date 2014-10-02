@@ -15,19 +15,11 @@ public class Tree {
     
     public void CreateTree(GameState p_CurrentState)
     {
-        m_RootNode = new Node(null, p_CurrentState, 0);
+        m_RootNode = new Node(null, p_CurrentState, 0, true, 0);
         m_RootNode.createChildren(m_Depth);
     }
     public int getMove()
     {
-        minMax();
-        return 1;
-    }
-    
-    private void minMax()
-    {
-        m_RootNode.calcUtility();
-        
-        //do the awesome minmax algorithm!!! :)
+        return m_RootNode.getMove();
     }
 }
