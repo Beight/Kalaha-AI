@@ -29,7 +29,7 @@ public class Node
         m_Ambo = p_Ambo;
     }
     
-    public void createChildren(int p_Depth)
+    public void depthFirst(int p_Depth)
     {
        //only expand to specified depth
        if(m_Depth < p_Depth)
@@ -46,9 +46,14 @@ public class Node
                         child = new Node(this, gs, (m_Depth + 1), !m_Max, i);
                     else
                         child = new Node(this, gs, (m_Depth + 1), m_Max, i);
-                    child.createChildren(p_Depth);
+                    child.depthFirst(p_Depth);
                     m_Children.add(child);                       
-                } 
+                }
+            }
+            if(m_Children.isEmpty())
+            {
+                calcUtility();
+                m_Leaf = true;
             }
         }
         else
@@ -59,28 +64,60 @@ public class Node
        //Propegate utility value from children nodes.
        if(!m_Leaf)
        {
-           //If it's mins turn get the lowest utility value
-           if(!m_Max)
+           try
            {
-               for(Node n : m_Children)
-               {
-                   if(m_Utility > n.m_Utility)
-                       m_Utility = n.m_Utility;
-               }
-               
+                //If it's mins turn get the lowest utility value
+                if(!m_Max)
+                {
+                    m_Utility = m_Children.get(0).m_Utility;
+                    for(Node n : m_Children)
+                    {
+                        if(m_Utility > n.m_Utility)
+                            m_Utility = n.m_Utility;
+                    }
+
+                }
+                //If it's max turn get the highest utility value
+                else
+                {
+                    m_Utility = m_Children.get(0).m_Utility;
+                    for(Node n : m_Children)
+                    {
+                        if(m_Utility < n.m_Utility)
+                            m_Utility = n.m_Utility;
+                    }
+                }
            }
-           //If it's max turn get the highest utility value
-           else
+           catch(Exception ex)
            {
-               for(Node n : m_Children)
-               {
-                   if(m_Utility < n.m_Utility)
-                       m_Utility = n.m_Utility;
-               }
+               throw ex;
            }
        }
-       if(m_Parent != null)
-            m_Children.clear();
+     if(m_Parent != null)
+           m_Children.clear();
+    }
+    
+    public void iterativeDeepening(int p_Depth)
+    {
+        int i = p_Depth;
+        double elapsedTime = 0.0;
+        while(elapsedTime < 4.5)//while tme is not 5 secs.
+        {
+            long startT = System.currentTimeMillis();
+            depthFirst(i);
+            for(Node n : m_Children)
+            {
+                if(n.m_Utility > 10)
+                {
+                    elapsedTime = 4.5;
+                    break;
+                }
+                
+            }
+            long tot = System.currentTimeMillis() - startT;
+            elapsedTime += (double)tot / 1000.0;
+            i += 1;
+        }
     }
     
     public void calcUtility()
@@ -127,51 +164,62 @@ public class Node
             else if(ScorePlayer1 < ScorePlayer2)
                 m_Utility -= 1;
             
-            // will not work becasue ambo will always be empty since we emptied it last move.
-            switch(m_Ambo)
+            for(int i = 1; i < 7; i++)
             {
-                case 1:
-                    if(m_State.getSeeds(m_Ambo, player1) == 6)
-                        m_Utility += 1;
-                case 2:
-                    if(m_State.getSeeds(m_Ambo, player1) == 5)
-                        m_Utility += 1;
-                case 3:
-                    if(m_State.getSeeds(m_Ambo, player1) == 4)
-                        m_Utility += 1;
-                case 4:
-                    if(m_State.getSeeds(m_Ambo, player1) == 3)
-                        m_Utility += 1;
-                case 5:
-                    if(m_State.getSeeds(m_Ambo, player1) == 2)
-                        m_Utility += 1;
-                case 6:
-                    if(m_State.getSeeds(m_Ambo, player1) == 1)
-                        m_Utility += 1;
-            }
-            // will not work becasue ambo will always be empty since we emptied it last move.
-            if(m_Max)
-                if((m_Ambo + m_State.getSeeds(m_Ambo, player1)) == 7)
-                    m_Utility += 1;
-            else
-                if((m_Ambo + m_State.getSeeds(m_Ambo, player2)) == 7)
-                    m_Utility -= 1;
-            
-            //ambo 1 = 6 seeds
-            //ambo 2 = 5 seeds
-            //ambo 3 = 4 seeds
-            //ambo 4 = 3 seeds
-            //ambo 5 = 2 seeds
-            //ambo 6 = 1 seeds
-           
-            
-                    
-            
+                //Check to see if we have any ambo that has enough seeds to
+                //end in the house which gives us a extra turn.
+                if(m_State.getSeeds(i, player1) != 0)
+                {
+                    if((7 - i) == m_State.getSeeds(i, player1))
+                        m_Utility += 3;
+                }
+                else
+                {
+                    //If an ambo is empty we check if the opposite player has any 
+                    //seeds to steal in their ambo opposite of our empty ambo.
+                    if(m_State.getSeeds(i, player2) > 0)
+                    {
+                        //loop through ambos prior to the empty ambo to see if
+                        //any of the ambos has the correct number of seeds to land
+                        //in the empty ambo.
+                        for(int j = 1; j < i; j++)
+                        {
+                            if((i - j) == m_State.getSeeds(j, player1))
+                                m_Utility += 5;
+                        }
+                    }
+                        
+                }
+                if(m_State.getSeeds(i, player2) != 0)
+                {
+                    if((7 - i) == m_State.getSeeds(i, player2))
+                    {
+                        m_Utility -= 3;
+                    }
+                    else
+                    {
+                        //If an ambo is empty we check if the opposite player has any 
+                        //seeds to steal in their ambo opposite of our empty ambo.
+                        if(m_State.getSeeds(i, player1) > 0)
+                        {
+                            //loop through ambos prior to the empty ambo to see if
+                            //any of the ambos has the correct number of seeds to land
+                            //in the empty ambo.
+                            for(int j = 1; j < i; j++)
+                            {
+                                if((i - j) == m_State.getSeeds(j, player2))
+                                    m_Utility -= 5;
+                            }
+                        }
+
+                    }
+                }
+            }        
         }
         else if (gameEnd == player1)
-            m_Utility = 1;
+            m_Utility += 10;
         else if(gameEnd == player2)
-            m_Utility = -1;
+            m_Utility -= 10;
          
         /*Utility rules
             * If max has more points in house +1
