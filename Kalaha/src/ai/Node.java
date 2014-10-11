@@ -2,7 +2,7 @@
 package ai;
 import kalaha.GameState;
 import java.util.ArrayList;
-
+import java.util.Random;
 
 public class Node
 {
@@ -10,15 +10,15 @@ public class Node
     private final GameState m_State; //A smaller gamestate might be an option to optimize memory.
     private final Node m_Parent; // not sure if needed. not needed as of yet.
     private boolean m_Leaf; 
-    private final int m_Depth;
+    private int m_Depth;
     private final int m_MaxNrOfChildren;
     private int m_Utility;
     private final boolean m_Max; //true if it's max turn, false if it min's turn
-    private final int m_Ambo;
+    private final int m_Move;
     
     public Node(Node p_Parent, GameState p_GameState, int p_Depth, boolean p_Max, int p_Ambo)
     {
-        m_Children = new ArrayList<>();
+        m_Children = new ArrayList();
         m_State = p_GameState;
         m_Parent = p_Parent;
         m_Leaf = false;
@@ -26,7 +26,7 @@ public class Node
         m_MaxNrOfChildren = 6;
         m_Utility = 0;
         m_Max = p_Max;
-        m_Ambo = p_Ambo;
+        m_Move = p_Ambo;
     }
     
     public void depthFirst(int p_Depth)
@@ -51,78 +51,112 @@ public class Node
                 }
             }
             if(m_Children.isEmpty())
-            {
                 calcUtility();
-                m_Leaf = true;
-            }
         }
         else
-        {
-            m_Leaf = true;
             calcUtility();
-        }
        //Propegate utility value from children nodes.
        if(!m_Leaf)
        {
-           try
-           {
-                //If it's mins turn get the lowest utility value
-                if(!m_Max)
-                {
-                    m_Utility = m_Children.get(0).m_Utility;
-                    for(Node n : m_Children)
-                    {
-                        if(m_Utility > n.m_Utility)
-                            m_Utility = n.m_Utility;
-                    }
-
-                }
-                //If it's max turn get the highest utility value
-                else
-                {
-                    m_Utility = m_Children.get(0).m_Utility;
-                    for(Node n : m_Children)
-                    {
-                        if(m_Utility < n.m_Utility)
-                            m_Utility = n.m_Utility;
-                    }
-                }
-           }
-           catch(Exception ex)
-           {
-               throw ex;
-           }
+           propegateUtility();
        }
-     if(m_Parent != null)
-           m_Children.clear();
     }
     
-    public void iterativeDeepening(int p_Depth)
+    public void depthFirst(int p_Depth, double p_Time)
+    {
+       //only expand to specified depth
+       long time = System.currentTimeMillis();
+       if(m_Depth < p_Depth && p_Time < 4.8)
+       {
+            for(int i = 1; i < m_MaxNrOfChildren + 1; i++)
+            {
+                GameState gs = m_State.clone();
+                if(gs.moveIsPossible(i))
+                {
+                    int prevPlayer = gs.getNextPlayer();
+                    gs.makeMove(i);
+                    Node child;
+                    if(gs.getNextPlayer() != prevPlayer)   
+                        child = new Node(this, gs, (m_Depth + 1), !m_Max, i);
+                    else
+                        child = new Node(this, gs, (m_Depth + 1), m_Max, i);
+                    long time2 = System.currentTimeMillis() - time;
+                    double elapsedTime = (double)time2 / 1000.0;
+                    child.depthFirst(p_Depth, elapsedTime + p_Time);
+                    m_Children.add(child);                       
+                }
+            }
+            if(m_Children.isEmpty())
+                calcUtility();
+        }
+        else 
+            calcUtility();
+       
+       //If this is not a leaf node, choose the correct utility value
+       //to propegate from this nodes children depending on min, max;
+       if(!m_Leaf)
+       {
+           propegateUtility();
+       }
+    }
+    
+    private void propegateUtility()
+    {
+        //If it's mins turn get the lowest utility value
+        if(!m_Max)
+        {
+            m_Utility = m_Children.get(0).m_Utility;
+            for(Node n : m_Children)
+            {
+                if(m_Utility > n.m_Utility)
+                    m_Utility = n.m_Utility;
+            }
+
+        }
+        //If it's max turn get the highest utility value
+        else
+        {
+            m_Utility = m_Children.get(0).m_Utility;
+            for(Node n : m_Children)
+            {
+                if(m_Utility < n.m_Utility)
+                    m_Utility = n.m_Utility;
+            }
+        }
+        m_Children.clear();
+    }
+    
+    public int iterativeDeepening(int p_Depth)
     {
         int i = p_Depth;
         double elapsedTime = 0.0;
-        while(elapsedTime < 4.5)//while tme is not 5 secs.
+        int bestMove = 1;
+        while(elapsedTime < 4.8)//while tme is not 5 secs.
         {
+            //Save the best move from last search,
+            //If htis is the fisrt iteraion of the loop
+            //no search has been performed and getMove() returns 1 as
+            //the best move.
+            bestMove = getMove();
+            //Clear the nodes from the last iteration.
+            m_Children.clear();
             long startT = System.currentTimeMillis();
-            depthFirst(i);
-            for(Node n : m_Children)
-            {
-                if(n.m_Utility > 10)
-                {
-                    elapsedTime = 4.5;
-                    break;
-                }
-                
-            }
+            
+            depthFirst(i, elapsedTime);
+            
             long tot = System.currentTimeMillis() - startT;
             elapsedTime += (double)tot / 1000.0;
+            //increase the depth
             i += 1;
         }
+        return bestMove;
     }
     
-    public void calcUtility()
+    private void calcUtility()
     {   
+        m_Leaf = true;
         int currentPlayer = m_State.getNextPlayer();
+        
         //player1 is the AI player
         int player1;
         //player2 is the opponent
@@ -217,9 +251,9 @@ public class Node
             }        
         }
         else if (gameEnd == player1)
-            m_Utility += 10;
+            m_Utility = 50;
         else if(gameEnd == player2)
-            m_Utility -= 10;
+            m_Utility = -50;
          
         /*Utility rules
             * If max has more points in house +1
@@ -230,16 +264,59 @@ public class Node
     
     public int getMove()
     {
-        int baseUtil = m_Children.get(0).m_Utility;
-        int move = m_Children.get(0).m_Ambo;
-        for(int i = 1; i < m_Children.size(); i++)
+        //Saftey if-statement to check that we actually have a child to get a move from
+        // if no childs are found loop through the gamestate to find the first
+        //possible move.
+        if(m_Children.size() > 0)
         {
-            if(baseUtil < m_Children.get(i).m_Utility)
+            int baseUtil = m_Children.get(0).m_Utility;
+            ArrayList<Integer> bestMoves;
+            bestMoves = new ArrayList();
+            
+            //Find the highest utility value
+            for(int i = 1; i < m_Children.size(); i++)
             {
-                baseUtil = m_Children.get(i).m_Utility;
-                move = m_Children.get(i).m_Ambo;
-            }    
+                if(baseUtil < m_Children.get(i).m_Utility)
+                {
+                    baseUtil = m_Children.get(i).m_Utility;
+                }
+            }
+            //Check if more than one node has the same utility
+            for(int i = 1; i < m_Children.size(); i++)
+            {
+                if(m_Utility == m_Children.get(i).m_Utility)
+                {
+                    bestMoves.add(m_Children.get(i).m_Move);
+                }
+            }
+            
+            return bestMoves.get(randInt(0, m_Children.size())); 
         }
-        return move; 
+        else
+        {
+            for(int i = 1; i < 7; i++)
+                if(m_State.moveIsPossible(i))
+                    return i;
+            
+            //if no possible moves is found return 1
+            //if this happends something should be wrong.
+            return 1;
+        }
     }
+    
+ 
+   private int randInt(int min, int max) {
+
+       // NOTE: Usually this should be a field rather than a method
+       // variable so that it is not re-seeded every call.
+       Random rand = new Random();
+
+       // nextInt is normally exclusive of the top value,
+       // so add 1 to make it inclusive
+       int randomNum = rand.nextInt((max - min) + 1) + min;
+
+       return randomNum;
+   }
+
+
 }

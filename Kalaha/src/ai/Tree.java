@@ -17,10 +17,11 @@ public class Tree {
     {
         m_RootNode = new Node(null, p_CurrentState, 0, true, 0);
         //m_RootNode.depthFirst(m_Depth);
-        m_RootNode.iterativeDeepening(m_Depth);
+        //m_RootNode.iterativeDeepening(m_Depth);
     }
     public int getMove()
     {
-        return m_RootNode.getMove();
+        return m_RootNode.iterativeDeepening(m_Depth);
+        //return m_RootNode.getMove();
     }
 }
