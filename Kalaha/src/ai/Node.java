@@ -123,7 +123,8 @@ public class Node
                     m_Utility = n.m_Utility;
             }
         }
-        m_Children.clear();
+        if(m_Parent != null)
+            m_Children.clear();
     }
     
     public int iterativeDeepening(int p_Depth)
@@ -134,9 +135,9 @@ public class Node
         while(elapsedTime < 4.8)//while tme is not 5 secs.
         {
             //Save the best move from last search,
-            //If htis is the fisrt iteraion of the loop
-            //no search has been performed and getMove() returns 1 as
-            //the best move.
+            //If this is the fisrt iteraion of the loop
+            //no search has been performed and getMove() returns the first
+            //possible move;
             bestMove = getMove();
             //Clear the nodes from the last iteration.
             m_Children.clear();
@@ -155,36 +156,22 @@ public class Node
     private void calcUtility()
     {   
         m_Leaf = true;
-        int currentPlayer = m_State.getNextPlayer();
-        
         //player1 is the AI player
         int player1;
         //player2 is the opponent
         int player2;
-        //Calculate which player number the AI player has
-        /*Note*
-            The AIs player number could be saved as an int in the Node object
-            but that would increase the memory usage of the Game tree so to avoid
-            another int in the Node object this if-else statements was created.
-            It's possible that the better way is still to save the player
-            number instead of calculating it with these if-esle statements
-        */
+        
+
         if(m_Max)
         {
-            player1 = currentPlayer;
+            player1 = m_State.getNextPlayer();
+            player2 = m_State.getOppositePlayer();
         }
         else
         {
-            if(currentPlayer == 1)
-                player1 = 2;
-            else
-                player1 = 1;
+            player1 = m_State.getOppositePlayer();
+            player2 = m_State.getNextPlayer();
         }
-        //Calculate which player number the Opponent has
-        if(player1 == 1)
-            player2 = 2;
-        else
-            player2 = 1;
         
         int gameEnd = m_State.getWinner();
         
@@ -194,9 +181,9 @@ public class Node
             int ScorePlayer1 = m_State.getScore(player1);
             int ScorePlayer2 = m_State.getScore(player2);
             if(ScorePlayer1 > ScorePlayer2)
-                m_Utility += 1;
+                m_Utility += 7;
             else if(ScorePlayer1 < ScorePlayer2)
-                m_Utility -= 1;
+                m_Utility -= 7;
             
             for(int i = 1; i < 7; i++)
             {
@@ -205,7 +192,7 @@ public class Node
                 if(m_State.getSeeds(i, player1) != 0)
                 {
                     if((7 - i) == m_State.getSeeds(i, player1))
-                        m_Utility += 3;
+                        m_Utility += 5;
                 }
                 else
                 {
@@ -219,7 +206,7 @@ public class Node
                         for(int j = 1; j < i; j++)
                         {
                             if((i - j) == m_State.getSeeds(j, player1))
-                                m_Utility += 5;
+                                m_Utility += 3;
                         }
                     }
                         
@@ -228,7 +215,7 @@ public class Node
                 {
                     if((7 - i) == m_State.getSeeds(i, player2))
                     {
-                        m_Utility -= 3;
+                        m_Utility -= 5;
                     }
                     else
                     {
@@ -242,7 +229,7 @@ public class Node
                             for(int j = 1; j < i; j++)
                             {
                                 if((i - j) == m_State.getSeeds(j, player2))
-                                    m_Utility -= 5;
+                                    m_Utility -= 3;
                             }
                         }
 
@@ -254,12 +241,8 @@ public class Node
             m_Utility = 50;
         else if(gameEnd == player2)
             m_Utility = -50;
-         
-        /*Utility rules
-            * If max has more points in house +1
-            * If min has more points in house -1
-            * 
-        */ 
+        
+        
     }                                                      
     
     public int getMove()
@@ -282,7 +265,7 @@ public class Node
                 }
             }
             //Check if more than one node has the same utility
-            for(int i = 1; i < m_Children.size(); i++)
+            for(int i = 0; i < m_Children.size(); i++)
             {
                 if(m_Utility == m_Children.get(i).m_Utility)
                 {
@@ -290,7 +273,7 @@ public class Node
                 }
             }
             
-            return bestMoves.get(randInt(0, m_Children.size())); 
+            return bestMoves.get(randInt(0, bestMoves.size()-1)); 
         }
         else
         {
@@ -310,7 +293,7 @@ public class Node
        // NOTE: Usually this should be a field rather than a method
        // variable so that it is not re-seeded every call.
        Random rand = new Random();
-
+       
        // nextInt is normally exclusive of the top value,
        // so add 1 to make it inclusive
        int randomNum = rand.nextInt((max - min) + 1) + min;

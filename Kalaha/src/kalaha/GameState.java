@@ -290,6 +290,14 @@ public class GameState
         return nextPlayer;
     }
     
+    public int getOppositePlayer()
+    {
+        if(nextPlayer == 1) 
+            return 2;
+        else
+            return 1;
+    }
+    
     /**
      * Toggles to next player.
      */
